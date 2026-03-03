@@ -22,13 +22,19 @@ cd acupunturista-master-lms
 cp .env.example .env
 ```
 Edite o arquivo `.env` e preencha:
+- `APP_DOMAIN` — **O domínio do servidor** (ex: `acupunturistamaster.com.br`). Este é o campo mais importante, pois as URLs do frontend e backend são derivadas dele automaticamente.
 - `POSTGRES_PASSWORD` — Troque para uma senha forte
 - `JWT_SECRET` — Gere um secret aleatório (`openssl rand -base64 32`)
-- `FRONTEND_URL` — URL pública do frontend (ex: `https://app.seudominio.com`)
-- `NEXT_PUBLIC_API_URL` — URL pública do backend (ex: `https://api.seudominio.com`)
+- `FRONTEND_URL` — URL pública do frontend (padrão: `https://APP_DOMAIN`)
+- `NEXT_PUBLIC_API_URL` — URL pública do backend API (padrão: `https://api.APP_DOMAIN`)
 - Credenciais do R2 e Bunny.net se necessário
 
-> **IMPORTANTE:** O `DATABASE_URL` é montado automaticamente a partir das variáveis `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB`. Não edite o `DATABASE_URL` diretamente, a menos que esteja usando um banco externo. O host interno do Docker para o banco é `postgres` (nome do serviço no docker-compose).
+> **IMPORTANTE — DOMÍNIO:** Antes de tudo, pergunte ao usuário qual será o domínio do servidor. A partir disso, preencha:
+> - `APP_DOMAIN=dominio-do-usuario.com`
+> - `FRONTEND_URL=https://dominio-do-usuario.com`
+> - `NEXT_PUBLIC_API_URL=https://api.dominio-do-usuario.com`
+>
+> O `DATABASE_URL` é montado automaticamente a partir das variáveis `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB`. Não edite o `DATABASE_URL` diretamente, a menos que esteja usando um banco externo. O host interno do Docker para o banco é `postgres` (nome do serviço no docker-compose).
 
 ### 3. Subir a Stack
 ```bash
