@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: masterlms-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-masterlms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-masterlms_secret_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-masterlms}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-masterlms}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Redis (Cache and Queue)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: masterlms-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Backend (NestJS API)
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: masterlms-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-masterlms}:${POSTGRES_PASSWORD:-masterlms_secret_2024}@postgres:5432/${POSTGRES_DB:-masterlms}?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PORT: 3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # Cloudflare R2 Storage
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      # Bunny.net
+      BUNNY_API_KEY: ${BUNNY_API_KEY:-}
+      BUNNY_LIBRARY_ID: ${BUNNY_LIBRARY_ID:-}
+    ports:
+      - "3001:3001"
+
+  # ============================================
+  # Frontend (Next.js)
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    container_name: masterlms-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
