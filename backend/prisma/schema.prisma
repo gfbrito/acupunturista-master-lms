@@ -1,0 +1,562 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String             @id @default(uuid())
+  name         String
+  email        String             @unique
+  passwordHash String
+  avatar       String?
+  surname      String?
+  whatsapp     String?
+  role         Role               @default(USER)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  subscriptionEndsAt DateTime?
+  points       Int                @default(0)
+  notifyByWhatsapp Boolean        @default(true)
+  notifyByEmail    Boolean        @default(true)
+  postComments CommunityComment[]
+  posts        CommunityPost[]
+  enrollments  Enrollment[]
+  comments     LessonComment[]
+  progress     LessonProgress[]
+  pointHistory PointHistory[]
+  badges       UserBadge[]
+  spaceMemberships SpaceMember[]
+  lessonRatings LessonRating[]
+  courseReviews CourseReview[]
+  postLikes    CommunityPostLike[]
+  pollVotes    PollVote[]
+  customRole   CustomRole?        @relation(fields: [customRoleId], references: [id])
+  customRoleId String?
+  notifications Notification[]
+  certificates  Certificate[]
+
+  @@map("users")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // LIKE, COMMENT, SYSTEM, COURSE_UPDATE, etc.
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model CustomRole {
+  id            String       @id @default(uuid())
+  name          String       @unique
+  description   String?
+  hasFullAccess Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  users         User[]
+  courses       Course[]
+  spaces        Space[]
+  pages         CustomPage[]
+
+  @@map("custom_roles")
+}
+
+model Course {
+  id               String            @id @default(uuid())
+  title            String
+  description      String?
+  slug             String            @unique
+  thumbnail        String?
+  bannerUrl        String?
+  defaultAccessDays Int              @default(365)
+  hasCertificate   Boolean           @default(false)
+  certificateSettings Json?          // { signerName: string, customText: string, layout: 'default'|'custom' }
+  totalHours       Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  enrollments      Enrollment[]
+  modules          Module[]
+  providerProducts ProviderProduct[]
+  spaces           Space[]
+  reviews          CourseReview[]
+  roles            CustomRole[]
+  learningPaths    LearningPathCourse[]
+  certificates     Certificate[]
+
+  @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  order       Int      @default(0)
+  courseId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lessons     Lesson[]
+  course      Course   @relation(fields: [courseId], references: [id])
+
+  @@map("modules")
+}
+
+model Lesson {
+  id              String           @id @default(uuid())
+  title           String
+  description     String?
+  moduleId        String
+  order           Int              @default(0)
+  videoType       VideoType        @default(BUNNY)
+  videoId         String?
+  durationSeconds Int              @default(0)
+  isPublished     Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  comments        LessonComment[]
+  materials       LessonMaterial[]
+  progress        LessonProgress[]
+  ratings         LessonRating[]
+  module          Module           @relation(fields: [moduleId], references: [id])
+
+  @@map("lessons")
+}
+
+model LessonMaterial {
+  id        String   @id @default(uuid())
+  title     String
+  type      String
+  url       String
+  lessonId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+
+  @@map("lesson_materials")
+}
+
+model LessonProgress {
+  id           String         @id @default(uuid())
+  userId       String
+  lessonId     String
+  completedAt  DateTime?
+  createdAt    DateTime       @default(now())
+  lastViewedAt DateTime       @default(now())
+  status       ProgressStatus @default(NOT_STARTED)
+  updatedAt    DateTime       @updatedAt
+  lesson       Lesson         @relation(fields: [lessonId], references: [id])
+  user         User           @relation(fields: [userId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@index([userId, status])
+  @@map("lesson_progress")
+}
+
+model LessonComment {
+  id        String          @id @default(uuid())
+  content   String
+  userId    String
+  lessonId  String
+  parentId  String?
+  isPinned  Boolean         @default(false)
+  likes     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  lesson    Lesson          @relation(fields: [lessonId], references: [id])
+  parent    LessonComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   LessonComment[] @relation("CommentReplies")
+  user      User            @relation(fields: [userId], references: [id])
+
+  @@map("lesson_comments")
+}
+
+model Enrollment {
+  id              String           @id @default(uuid())
+  userId          String
+  courseId        String
+  startAt         DateTime         @default(now())
+  endAt           DateTime
+  status          EnrollmentStatus @default(ACTIVE)
+  source          String
+  sourceReference String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  course          Course           @relation(fields: [courseId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
+
+  @@map("enrollments")
+}
+
+model Transaction {
+  id                String   @id @default(uuid())
+  provider          String
+  providerProductId String
+  rawPayload        Json
+  processed         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@map("transactions")
+}
+
+model ProviderProduct {
+  id                String @id @default(uuid())
+  provider          String
+  providerProductId String
+  courseId          String
+  durationDays      Int    @default(365)
+  course            Course @relation(fields: [courseId], references: [id])
+
+  @@unique([provider, providerProductId])
+  @@map("provider_products")
+}
+
+enum SpaceType {
+  DISCUSSION
+  COURSE
+  EVENT
+  MEMBERS
+  GALLERY
+  CHAT
+}
+
+enum AccessLevel {
+  PUBLIC
+  PRIVATE
+  SECRET
+}
+
+enum SpaceRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+model SpaceGroup {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  order     Int      @default(0)
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  spaces    Space[]
+
+  @@map("space_groups")
+}
+
+model Space {
+  id             String        @id @default(uuid())
+  spaceGroupId   String
+  title          String
+  slug           String        @unique
+  icon           String?
+  coverUrl       String?
+  isDynamicCover Boolean       @default(false)
+  type           SpaceType     @default(DISCUSSION)
+  accessLevel    AccessLevel   @default(PUBLIC)
+  order          Int           @default(0)
+  courseId       String?
+  autoJoinRule   Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  spaceGroup     SpaceGroup    @relation(fields: [spaceGroupId], references: [id])
+  course         Course?       @relation(fields: [courseId], references: [id])
+  members        SpaceMember[]
+  posts          CommunityPost[]
+  events         Event[]
+  roles          CustomRole[]
+
+  @@map("spaces")
+}
+
+model SpaceMember {
+  id        String    @id @default(uuid())
+  spaceId   String
+  userId    String
+  role      SpaceRole @default(MEMBER)
+  createdAt DateTime  @default(now())
+  
+  space     Space     @relation(fields: [spaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([spaceId, userId])
+  @@map("space_members")
+}
+
+model CommunityPost {
+  id        String             @id @default(uuid())
+  title     String?            // Optional title as per user request
+  content   String
+  imageUrl  String?
+  userId    String
+  spaceId   String?            // Made optional for migration safety, but logic should enforce it eventually
+  likes     Int                @default(0)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  comments  CommunityComment[]
+  likedBy   CommunityPostLike[]
+  user      User               @relation(fields: [userId], references: [id])
+  space     Space?             @relation(fields: [spaceId], references: [id])
+  poll      Poll?
+
+  @@index([createdAt(sort: Desc)])
+  @@index([spaceId, createdAt(sort: Desc)])
+  @@map("community_posts")
+}
+
+model Poll {
+  id        String       @id @default(uuid())
+  postId    String       @unique
+  question  String
+  createdAt DateTime     @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id])
+  options   PollOption[]
+  votes     PollVote[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  id     String     @id @default(uuid())
+  pollId String
+  text   String
+  poll   Poll       @relation(fields: [pollId], references: [id])
+  votes  PollVote[]
+
+  @@map("poll_options")
+}
+
+model PollVote {
+  id       String     @id @default(uuid())
+  pollId   String
+  optionId String
+  userId   String
+  poll     Poll       @relation(fields: [pollId], references: [id])
+  option   PollOption @relation(fields: [optionId], references: [id])
+  user     User       @relation(fields: [userId], references: [id])
+
+  @@unique([pollId, userId])
+  @@map("poll_votes")
+}
+
+model CommunityComment {
+  id        String        @id @default(uuid())
+  content   String
+  postId    String
+  userId    String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  post      CommunityPost @relation(fields: [postId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@map("community_comments")
+}
+
+model CommunityPostLike {
+  id        String        @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime      @default(now())
+  
+  post      CommunityPost @relation(fields: [postId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@map("community_post_likes")
+}
+
+model Badge {
+  id             String         @id @default(uuid())
+  name           String
+  description    String
+  icon           String
+  condition      BadgeCondition
+  conditionValue Int?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  userBadges     UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(uuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model PointHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  points    Int
+  reason    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("point_history")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  link        String?
+  visibility  String
+  spaceId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  space       Space?   @relation(fields: [spaceId], references: [id])
+
+  @@map("events")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum VideoType {
+  BUNNY
+  VIMEO
+  YOUTUBE
+}
+
+enum BadgeCondition {
+  FIRST_LESSON
+  FIRST_MODULE
+  FIRST_COMMENT
+  CONSISTENCY_3
+  CONSISTENCY_7
+  COURSE_COMPLETED
+  MANUAL
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model LessonRating {
+  id        String   @id @default(uuid())
+  userId    String
+  lessonId  String
+  rating    Int      // 1-5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  
+  @@unique([userId, lessonId])
+  @@map("lesson_ratings")
+}
+
+model CourseReview {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+  
+  @@unique([userId, courseId])
+  @@map("course_reviews")
+}
+
+model SystemSetting {
+  key   String @id
+  value String
+
+  @@map("system_settings")
+}
+
+model CustomPage {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  content   String   @db.Text
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles     CustomRole[]
+
+
+  @@map("custom_pages")
+}
+
+model LearningPath {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?
+  coverUrl    String?
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses     LearningPathCourse[]
+
+  @@map("learning_paths")
+}
+
+
+model LearningPathCourse {
+  id             String       @id @default(uuid())
+  learningPathId String
+  courseId       String
+  order          Int
+  
+  learningPath   LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([learningPathId, courseId])
+  @@map("learning_path_courses")
+}
+
+
+model Certificate {
+  id              String   @id @default(uuid())
+  validationCode  String   @unique
+  userId          String
+  courseId        String
+  issuedAt        DateTime @default(now())
+  pdfUrl          String?  // Optional: storage URL if we decide to persist the file
+  
+  user            User     @relation(fields: [userId], references: [id])
+  course          Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("certificates")
+}

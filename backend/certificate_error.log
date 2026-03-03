@@ -1,0 +1,27 @@
+Error 2025-12-10T13:55:11.107Z: Unknown font format
+Stack: Error: Unknown font format
+    at Object.$59aa4ed98453e1d4$export$185802fd694ee1f5 (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/fontkit/dist/src/base.js:23:9)
+    at PDFFontFactory.open (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/pdfkit/lib/font_factory.js:17:22)
+    at PDFDocument.font (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/pdfkit/lib/mixins/fonts.js:85:33)
+    at CertificatesService.generatePdfStream (/Users/gisleyfernandesbrito/Documents/masterlms/backend/src/certificates/certificates.service.ts:256:22)
+    at async CertificatesController.generateAndDownload (/Users/gisleyfernandesbrito/Documents/masterlms/backend/src/certificates/certificates.controller.ts:49:24)
+    at async /Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/@nestjs/core/router/router-execution-context.js:46:28
+    at async /Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/@nestjs/core/router/router-proxy.js:9:17
+Error 2025-12-10T13:55:31.807Z: Unknown font format
+Stack: Error: Unknown font format
+    at Object.$59aa4ed98453e1d4$export$185802fd694ee1f5 (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/fontkit/dist/src/base.js:23:9)
+    at PDFFontFactory.open (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/pdfkit/lib/font_factory.js:17:22)
+    at PDFDocument.font (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/pdfkit/lib/mixins/fonts.js:85:33)
+    at CertificatesService.generatePdfStream (/Users/gisleyfernandesbrito/Documents/masterlms/backend/src/certificates/certificates.service.ts:256:22)
+    at async CertificatesController.generateAndDownload (/Users/gisleyfernandesbrito/Documents/masterlms/backend/src/certificates/certificates.controller.ts:49:24)
+    at async /Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/@nestjs/core/router/router-execution-context.js:46:28
+    at async /Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/@nestjs/core/router/router-proxy.js:9:17
+Error 2025-12-10T14:17:43.970Z: Unknown font format
+Stack: Error: Unknown font format
+    at Object.$59aa4ed98453e1d4$export$185802fd694ee1f5 (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/fontkit/dist/src/base.js:23:9)
+    at PDFFontFactory.open (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/pdfkit/lib/font_factory.js:17:22)
+    at PDFDocument.font (/Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/pdfkit/lib/mixins/fonts.js:85:33)
+    at CertificatesService.generatePdfStream (/Users/gisleyfernandesbrito/Documents/masterlms/backend/src/certificates/certificates.service.ts:267:34)
+    at async CertificatesController.generateAndDownload (/Users/gisleyfernandesbrito/Documents/masterlms/backend/src/certificates/certificates.controller.ts:49:24)
+    at async /Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/@nestjs/core/router/router-execution-context.js:46:28
+    at async /Users/gisleyfernandesbrito/Documents/masterlms/backend/node_modules/@nestjs/core/router/router-proxy.js:9:17
